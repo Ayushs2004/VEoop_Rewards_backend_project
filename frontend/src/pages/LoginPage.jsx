@@ -150,7 +150,7 @@ export const LoginPage = () => {
             <input
               type="email"
               className="form-input"
-              placeholder="email"
+              placeholder="xyz@email.com"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
