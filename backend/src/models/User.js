@@ -39,6 +39,8 @@ const userSchema = new mongoose.Schema(
   }
 );
 
+userSchema.index({ name: 1 });
+
 // Method to verify password
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.passwordHash);

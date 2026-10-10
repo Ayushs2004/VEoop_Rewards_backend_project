@@ -294,10 +294,10 @@
       ]
     },
     {
-      "name": "6. Admin Overview & Audit Logs",
+      "name": "6. Admin Overview & Operations",
       "item": [
         {
-          "name": "Get System Stats",
+          "name": "Get System Stats & Circulation",
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
@@ -305,7 +305,55 @@
           }
         },
         {
-          "name": "Get Audit Logs",
+          "name": "List & Search Users (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/admin/users?page=1&limit=10", "host": ["{{baseUrl}}"], "path": ["api", "admin", "users"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "10" }] }
+          }
+        },
+        {
+          "name": "Get User Profile & Wallet Details",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/admin/users/{{userId}}", "host": ["{{baseUrl}}"], "path": ["api", "admin", "users", "{{userId}}"] }
+          }
+        },
+        {
+          "name": "Get User Ledger Transactions (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/admin/users/{{userId}}/transactions?page=1&limit=10", "host": ["{{baseUrl}}"], "path": ["api", "admin", "users", "{{userId}}", "transactions"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "10" }] }
+          }
+        },
+        {
+          "name": "Get User Withdrawals (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/admin/users/{{userId}}/withdrawals?page=1&limit=10", "host": ["{{baseUrl}}"], "path": ["api", "admin", "users", "{{userId}}", "withdrawals"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "10" }] }
+          }
+        },
+        {
+          "name": "Get Filtered Withdrawal Queue",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/admin/withdrawals?status=PENDING", "host": ["{{baseUrl}}"], "path": ["api", "admin", "withdrawals"], "query": [{ "key": "status", "value": "PENDING" }] }
+          }
+        },
+        {
+          "name": "Get Withdrawal Details with Ledger & Audit Trail",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/admin/withdrawals/{{withdrawalId}}", "host": ["{{baseUrl}}"], "path": ["api", "admin", "withdrawals", "{{withdrawalId}}"] }
+          }
+        },
+        {
+          "name": "Get System Audit Logs (Paginated)",
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],

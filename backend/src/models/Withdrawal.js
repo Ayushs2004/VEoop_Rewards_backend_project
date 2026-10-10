@@ -96,19 +96,16 @@ withdrawalSchema.index(
 // Compound indexes for history filtering
 withdrawalSchema.index({ userId: 1, createdAt: -1 });
 withdrawalSchema.index({ status: 1, createdAt: -1 });
+withdrawalSchema.index({ method: 1, createdAt: -1 });
+withdrawalSchema.index({ createdAt: -1 });
+
+const { maskPayoutDetails } = require('../utils/masker');
 
 withdrawalSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.__v;
-  // Mask sensitive payout details partially if needed, keeping domain audit clean
-  if (obj.payoutDetails && obj.payoutDetails.upiId) {
-    const parts = obj.payoutDetails.upiId.split('@');
-    if (parts.length === 2 && parts[0].length > 3) {
-      obj.payoutDetails = {
-        ...obj.payoutDetails,
-        maskedUpiId: `${parts[0].slice(0, 2)}***@${parts[1]}`
-      };
-    }
+  if (obj.payoutDetails) {
+    obj.payoutDetails = maskPayoutDetails(obj.payoutDetails);
   }
   return obj;
 };

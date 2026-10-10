@@ -71,6 +71,7 @@ const walletTransactionSchema = new mongoose.Schema(
 // Compound index for user transaction history lookup ordered by time
 walletTransactionSchema.index({ userId: 1, createdAt: -1 });
 walletTransactionSchema.index({ userId: 1, currency: 1 });
+walletTransactionSchema.index({ createdAt: -1 });
 
 walletTransactionSchema.methods.toJSON = function () {
   const obj = this.toObject();

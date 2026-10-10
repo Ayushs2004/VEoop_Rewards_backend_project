@@ -373,26 +373,75 @@ const rejectWithdrawal = async ({ withdrawalId, adminId, reason = 'Administrativ
   };
 };
 
+const { maskPayoutDetails } = require('../utils/masker');
+
 /**
- * Fetch withdrawals for a user or admin
+ * Fetch withdrawals for a user or admin with rich filtering, search and masking
  */
-const getWithdrawals = async ({ userId = null, status = null, page = 1, limit = 20 } = {}) => {
+const getWithdrawals = async ({
+  userId = null,
+  status = null,
+  method = null,
+  search = null,
+  startDate = null,
+  endDate = null,
+  page = 1,
+  limit = 20,
+  isAdmin = false
+} = {}) => {
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
   const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
   const skip = (pageNum - 1) * limitNum;
 
   const filter = {};
   if (userId) filter.userId = userId;
-  if (status) filter.status = status;
+  if (status && status !== 'ALL') filter.status = status;
+  if (method && method !== 'ALL') filter.method = String(method).trim().toUpperCase();
 
-  const [withdrawals, total] = await Promise.all([
-    Withdrawal.find(filter)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limitNum)
-      .lean(),
+  if (startDate || endDate) {
+    filter.createdAt = {};
+    if (startDate) filter.createdAt.$gte = new Date(startDate);
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      filter.createdAt.$lte = end;
+    }
+  }
+
+  if (search && search.trim()) {
+    const term = search.trim();
+    if (isAdmin && !userId) {
+      const matchedUsers = await User.find({
+        $or: [
+          { email: new RegExp(term, 'i') },
+          { name: new RegExp(term, 'i') }
+        ]
+      }).select('_id');
+      const matchedUserIds = matchedUsers.map((u) => u._id);
+
+      filter.$or = [
+        { withdrawalId: new RegExp(term, 'i') },
+        { userId: { $in: matchedUserIds } }
+      ];
+    } else {
+      filter.withdrawalId = new RegExp(term, 'i');
+    }
+  }
+
+  let query = Withdrawal.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limitNum);
+  if (isAdmin) {
+    query = query.populate('userId', 'name email accountStatus role');
+  }
+
+  const [rawWithdrawals, total] = await Promise.all([
+    query.lean(),
     Withdrawal.countDocuments(filter)
   ]);
+
+  const withdrawals = rawWithdrawals.map((w) => ({
+    ...w,
+    payoutDetails: maskPayoutDetails(w.payoutDetails)
+  }));
 
   return {
     withdrawals,
@@ -408,12 +457,19 @@ const getWithdrawals = async ({ userId = null, status = null, page = 1, limit = 
 /**
  * Fetch a single withdrawal by ID
  */
-const getWithdrawalById = async (withdrawalId, userId = null) => {
-  const query = { withdrawalId };
+const getWithdrawalById = async (withdrawalId, userId = null, isAdmin = false) => {
+  let query = Withdrawal.findOne({ withdrawalId });
   if (userId) {
-    query.userId = userId;
+    query = Withdrawal.findOne({ withdrawalId, userId });
   }
-  return Withdrawal.findOne(query).lean();
+  if (isAdmin) {
+    query = query.populate('userId', 'name email accountStatus role');
+  }
+  const item = await query.lean();
+  if (item && item.payoutDetails) {
+    item.payoutDetails = maskPayoutDetails(item.payoutDetails);
+  }
+  return item;
 };
 
 module.exports = {

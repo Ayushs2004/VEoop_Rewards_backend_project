@@ -3,8 +3,8 @@
 The backend includes a comprehensive Jest + Supertest automated test suite operating on an isolated in-memory MongoDB runner.
 
 ## Test Summary
-- **Total Test Suites:** 5 passed (`auth.test.js`, `wallet.test.js`, `withdrawal.test.js`, `security.test.js`, `concurrency.test.js`)
-- **Total Test Cases:** 27 passed (100% success rate in ~14.7s)
+- **Total Test Suites:** 6 passed (`admin.test.js`, `auth.test.js`, `wallet.test.js`, `withdrawal.test.js`, `security.test.js`, `concurrency.test.js`)
+- **Total Test Cases:** 35 passed (100% success rate in ~10.9s)
 - **Code Execution:** Deterministic, zero mock dependencies, verified on actual Mongoose models and queries.
 
 ---
@@ -22,6 +22,21 @@ The backend includes a comprehensive Jest + Supertest automated test suite opera
 | **TEST 7** | Cross-Tenant User Isolation | User A attempts to read User B's withdrawal ID; User A passes `?userId=UserB` to wallet | Rejected with `403 Forbidden` (`FORBIDDEN`). Wallet API strictly ignores query parameter and derives identity from JWT. | `tests/security.test.js` |
 | **TEST 8** | Rejected Withdrawal & Reversal | User requests withdrawal (10k -> 7.6k). Admin calls `/reject` | Status becomes `REJECTED`. Safe refund `CREDIT` ledger entry created (`balanceBefore=7600`, `balanceAfter=10000`). Original `DEBIT` ledger entry is preserved. | `tests/withdrawal.test.js` |
 | **TEST 9** | API Manipulation | Client sends `{ amount: 1 }` or `{ requiredAmount: 1 }` in body | Backend ignores client-supplied amount and calculates the true configured required VEs (2,400) from MongoDB. Wallet is debited by exactly 2,400 VEs. | `tests/withdrawal.test.js` |
+
+---
+
+## Admin Panel & Operational Control Test Matrix
+
+| Test Scenario | Input / Trigger | Expected Outcome | Verified In |
+|---|---|---|---|
+| **Admin Stats & Circulation** | `GET /api/admin/stats` | Returns total/active users, circulation across all 5 currencies, pending withdrawals, recent transactions, and audit logs. | `tests/admin.test.js` |
+| **User Directory & Search** | `GET /api/admin/users?search=...` | Returns paginated user records with attached live wallet balances across all 5 currencies. | `tests/admin.test.js` |
+| **User Profile & Ledger** | `GET /api/admin/users/:id` | Returns complete user profile, wallet details, and aggregated financial metrics. | `tests/admin.test.js` |
+| **User Paginated Ledger** | `GET /api/admin/users/:id/transactions` | Returns paginated double-entry ledger history for target user. | `tests/admin.test.js` |
+| **Withdrawal Queue & Masking** | `GET /api/admin/withdrawals?status=PENDING` | Returns filtered queue with sensitive beneficiary details masked (`maskedUpiId`, `maskedEmail`). | `tests/admin.test.js` |
+| **Withdrawal Audit Detail** | `GET /api/admin/withdrawals/:id` | Returns full withdrawal details, linked ledger transaction, and associated audit timeline. | `tests/admin.test.js` |
+| **RBAC Security Guard** | Regular user calling `/api/admin/*` | All administrative endpoints return `403 Forbidden` (`FORBIDDEN`). | `tests/admin.test.js` |
+| **Mandatory Adjustment Reason** | Admin omitting reason in `/api/wallet/credit` | Request fails with `400 Bad Request`. When provided, returns `balanceBefore` and `balanceAfter`. | `tests/admin.test.js` |
 
 ---
 

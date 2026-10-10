@@ -594,11 +594,15 @@ Idempotency-Key: req_c19a4b3d8f
 
 ---
 
-## 7. Admin Overview & Audit APIs
+## 7. Admin & Operations APIs (Protected: Role ADMIN)
 
-### 7.1 System Statistics
+All administrative endpoints are strictly guarded by JWT authentication and role-based access control (`Role: ADMIN`). Non-admin users are rejected with `403 FORBIDDEN`.
+
+---
+
+### 7.1 Dashboard Statistics & Circulation Overview
 - **Endpoint:** `GET /api/admin/stats`
-- **Authentication:** Bearer JWT (Role: `ADMIN` required)
+- **Authentication:** Bearer JWT (Role: `ADMIN`)
 
 **Response (200 OK):**
 ```json
@@ -606,19 +610,192 @@ Idempotency-Key: req_c19a4b3d8f
   "success": true,
   "message": "Admin overview stats fetched successfully.",
   "data": {
-    "users": { "total": 3 },
-    "withdrawals": { "pending": 1, "approved": 4, "rejected": 1 },
-    "circulation": { "totalVEs": 125000, "totalSVEs": 25000, "totalGems": 600 }
+    "users": {
+      "total": 120,
+      "active": 118
+    },
+    "withdrawals": {
+      "pending": 3,
+      "approved": 42,
+      "rejected": 5,
+      "totalPendingVEs": 7200,
+      "totalPendingPayoutINR": 150,
+      "totalPendingPayoutUSD": 0,
+      "totalApprovedVEs": 98400,
+      "totalApprovedPayoutINR": 2100,
+      "totalApprovedPayoutUSD": 25
+    },
+    "circulation": {
+      "totalVEs": 2450000,
+      "totalSVEs": 450000,
+      "totalGems": 12500,
+      "totalTokens": 62000,
+      "totalSpins": 350,
+      "avgVEs": 20416
+    },
+    "recentTransactions": [ ... ],
+    "recentAuditLogs": [ ... ]
   }
 }
 ```
 
 ---
 
-### 7.2 System Audit Trail
+### 7.2 User Management: List & Search Users
+- **Endpoint:** `GET /api/admin/users`
+- **Authentication:** Bearer JWT (Role: `ADMIN`)
+- **Query Parameters:**
+  - `page` (integer, default: 1)
+  - `limit` (integer, default: 10, max: 100)
+  - `search` (string: searches name, email, or user ID)
+  - `status` (string: `ACTIVE`, `SUSPENDED`, `FLAGGED`)
+  - `role` (string: `USER`, `ADMIN`)
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Users fetched successfully.",
+  "data": [
+    {
+      "_id": "67245a90184b29c9ef310111",
+      "name": "Demo User",
+      "email": "demo@veloop.test",
+      "role": "USER",
+      "accountStatus": "ACTIVE",
+      "createdAt": "2026-10-03T09:00:00.000Z",
+      "wallet": {
+        "ves": 25000,
+        "sves": 5000,
+        "gems": 100,
+        "tokens": 500,
+        "spins": 3
+      }
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "limit": 10,
+    "total": 120,
+    "totalPages": 12
+  }
+}
+```
+
+---
+
+### 7.3 User Management: View Individual User Profile & Wallet Details
+- **Endpoint:** `GET /api/admin/users/:id`
+- **Authentication:** Bearer JWT (Role: `ADMIN`)
+- **URL Parameters:** `:id` (MongoDB ObjectId, email address, or name)
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "User details fetched successfully.",
+  "data": {
+    "user": {
+      "_id": "67245a90184b29c9ef310111",
+      "name": "Demo User",
+      "email": "demo@veloop.test",
+      "role": "USER",
+      "accountStatus": "ACTIVE",
+      "createdAt": "2026-10-03T09:00:00.000Z"
+    },
+    "wallet": {
+      "ves": 25000,
+      "sves": 5000,
+      "gems": 100,
+      "tokens": 500,
+      "spins": 3
+    },
+    "metrics": {
+      "totalTransactions": 14,
+      "totalWithdrawals": 3,
+      "totalCreditedVEs": 32000,
+      "totalDebitedVEs": 7000,
+      "withdrawalBreakdown": [
+        { "_id": "APPROVED", "count": 2, "totalCurrencyAmount": 4800 },
+        { "_id": "PENDING", "count": 1, "totalCurrencyAmount": 2400 }
+      ]
+    }
+  }
+}
+```
+
+---
+
+### 7.4 User Management: View Paginated User Transaction Ledger
+- **Endpoint:** `GET /api/admin/users/:id/transactions`
+- **Authentication:** Bearer JWT (Role: `ADMIN`)
+- **Query Parameters:** `page`, `limit`, `currency`, `type`
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "User transactions fetched successfully.",
+  "data": [
+    {
+      "transactionId": "TXN_M48K2_B109",
+      "userId": "67245a90184b29c9ef310111",
+      "currency": "VEs",
+      "type": "CREDIT",
+      "amount": 500,
+      "balanceBefore": 24500,
+      "balanceAfter": 25000,
+      "source": "AD_REWARD",
+      "description": "Rewarded video ad view",
+      "createdAt": "2026-10-03T10:15:00.000Z"
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "limit": 10,
+    "total": 14,
+    "totalPages": 2
+  }
+}
+```
+
+---
+
+### 7.5 User Management: View User Withdrawal Requests
+- **Endpoint:** `GET /api/admin/users/:id/withdrawals`
+- **Authentication:** Bearer JWT (Role: `ADMIN`)
+- **Query Parameters:** `page`, `limit`, `status`
+
+---
+
+### 7.6 Withdrawal Management: Filtered Withdrawal Queue
+- **Endpoint:** `GET /api/admin/withdrawals`
+- **Authentication:** Bearer JWT (Role: `ADMIN`)
+- **Query Parameters:**
+  - `page` (default: 1)
+  - `limit` (default: 10, max: 100)
+  - `status` (`ALL`, `PENDING`, `PROCESSING`, `APPROVED`, `REJECTED`, `CANCELLED`)
+  - `method` (`ALL`, `UPI`, `PAYPAL`, `AMAZON_GIFT_CARD`, `GOOGLE_PLAY_GIFT_CARD`)
+  - `search` (withdrawalId, user name, or email)
+  - `startDate` (YYYY-MM-DD)
+  - `endDate` (YYYY-MM-DD)
+
+Sensitive payout details are automatically masked for privacy (`maskedUpiId`, `maskedEmail`).
+
+---
+
+### 7.7 Withdrawal Management: Detailed Withdrawal View
+- **Endpoint:** `GET /api/admin/withdrawals/:id`
+- **Authentication:** Bearer JWT (Role: `ADMIN`)
+
+Returns the withdrawal record, populated user details, linked `WalletTransaction` ledger record, and complete `AuditLog` timeline.
+
+---
+
+### 7.8 Security & Audit Logs
 - **Endpoint:** `GET /api/admin/audit-logs`
-- **Authentication:** Bearer JWT (Role: `ADMIN` required)
-- **Query Params:** `page`, `limit`, `action`
+- **Authentication:** Bearer JWT (Role: `ADMIN`)
+- **Query Parameters:** `page`, `limit`, `action`, `targetType`
 
 **Response (200 OK):**
 ```json
@@ -632,8 +809,21 @@ Idempotency-Key: req_c19a4b3d8f
       "targetType": "WITHDRAWAL",
       "referenceId": "WTH_M48K2_E18A",
       "actorId": { "name": "System Administrator", "email": "admin@veloop.test" },
+      "targetUserId": { "name": "Demo User", "email": "demo@veloop.test" },
+      "metadata": {
+        "reason": "Invalid beneficiary UPI address",
+        "refundedAmount": 2400,
+        "currency": "VEs"
+      },
       "createdAt": "2026-10-03T09:21:00.000Z"
     }
-  ]
+  ],
+  "meta": {
+    "page": 1,
+    "limit": 20,
+    "total": 35,
+    "totalPages": 2
+  }
 }
 ```
+

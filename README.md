@@ -4,8 +4,8 @@
 [![Express.js](https://img.shields.io/badge/Express.js-4.21-lightgrey.svg)](https://expressjs.com/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose%208-brightgreen.svg)](https://mongoosejs.com/)
 [![React](https://img.shields.io/badge/React-18-blue.svg)](https://react.dev/)
-[![Tests](https://img.shields.io/badge/Tests-27%20Passed-success.svg)](https://jestjs.io/)
-[![Suites](https://img.shields.io/badge/Suites-5%20Passed-success.svg)](https://jestjs.io/)
+[![Tests](https://img.shields.io/badge/Tests-35%20Passed-success.svg)](https://jestjs.io/)
+[![Suites](https://img.shields.io/badge/Suites-6%20Passed-success.svg)](https://jestjs.io/)
 
 A production-grade, high-throughput financial backend and wallet ledger system built for **VELoop Rewards**.
 
@@ -523,6 +523,17 @@ PASS tests/auth.test.js
     √ Password missing number is rejected (27 ms)
     √ Password missing special character is rejected (26 ms)
 
+PASS tests/admin.test.js
+  Admin Panel Management & Security APIs
+    √ GET /api/admin/stats: Returns complete system overview, circulation, and recent activity (350 ms)
+    √ GET /api/admin/users: Lists users with attached live wallet balances and supports search (189 ms)
+    √ GET /api/admin/users/:id: Fetches individual user profile, wallet details, and metrics (162 ms)
+    √ GET /api/admin/users/:id/transactions: Returns paginated user transactions (163 ms)
+    √ GET /api/admin/withdrawals: Returns filtered list and masks sensitive beneficiary details (188 ms)
+    √ GET /api/admin/withdrawals/:id: Returns full withdrawal details, ledger link, and audit trail (171 ms)
+    √ Security Guard: Regular user cannot access any /api/admin endpoint (403 Forbidden) (167 ms)
+    √ Wallet Adjustment: Mandatory reason is enforced and balance before/after is returned (175 ms)
+
 PASS tests/withdrawal.test.js
   Withdrawal Flow, Validation & Idempotency
     √ TEST 2: Normal withdrawal deducts correct required amount and transitions to PENDING (1500 VEs - 1000 VEs = 500 VEs) (404 ms)
@@ -555,10 +566,10 @@ PASS tests/concurrency.test.js
   Concurrency & Race Condition Protection
     √ TEST 5: Concurrent withdrawal requests prevent double spending; exactly one succeeds and one fails (428 ms)
 
-Test Suites: 5 passed, 5 total
-Tests:       27 passed, 27 total
+Test Suites: 6 passed, 6 total
+Tests:       35 passed, 35 total
 Snapshots:   0 total
-Time:        14.71 s
+Time:        10.95 s
 ```
 
 ---
@@ -633,7 +644,12 @@ Scaling a digital reward wallet system from 1,000 users to 1,000,000 users requi
 - [x] Idempotency header support (`Idempotency-Key`) preventing duplicate requests.
 - [x] Backend authoritative calculation ignoring client-supplied amount manipulation.
 - [x] Admin approval and rejection with automated ledger refund reversal.
+- [x] Enhanced Admin Panel with Dashboard Overview, User Directory, Withdrawal Queue, and Audit Trail.
+- [x] Searchable, paginated user management with live wallet balances across all 5 currencies.
+- [x] Detailed user modal with complete paginated transaction ledger and withdrawal history.
+- [x] Filterable withdrawal queue (status, method, search, date range) with beneficiary detail masking.
+- [x] Mandatory reason validation on administrative wallet adjustments returning before/after balances.
 - [x] Seed data script (`npm run seed`) creating Demo User (25k VEs), Admin, and 19 payout options.
-- [x] 27 automated backend tests passing with 100% success rate across 5 test suites.
+- [x] 35 automated backend tests passing with 100% success rate across 6 test suites.
 - [x] Ready-to-run Postman collection with dynamic environment variables.
 - [x] Complete architectural documentation and 1M users scalability analysis.

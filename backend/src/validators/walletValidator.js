@@ -23,6 +23,17 @@ const walletMutationValidator = [
     .optional()
     .isString()
     .trim(),
+  body('reason')
+    .optional()
+    .isString()
+    .trim(),
+  body().custom((value, { req }) => {
+    const reasonText = (req.body.reason || req.body.description || '').trim();
+    if (!reasonText) {
+      throw new Error('A mandatory reason or description is required for each wallet adjustment');
+    }
+    return true;
+  }),
   validate
 ];
 

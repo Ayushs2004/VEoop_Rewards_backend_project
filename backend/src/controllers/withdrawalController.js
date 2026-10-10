@@ -59,18 +59,24 @@ const createWithdrawal = async (req, res, next) => {
  */
 const getWithdrawals = async (req, res, next) => {
   try {
-    const { page, limit, status, userId: queryUserId } = req.query;
+    const { page, limit, status, method, search, startDate, endDate, userId: queryUserId } = req.query;
 
+    const isAdmin = req.user.role === USER_ROLES.ADMIN;
     let targetUserId = req.user.id;
-    if (req.user.role === USER_ROLES.ADMIN) {
+    if (isAdmin) {
       targetUserId = queryUserId || null;
     }
 
     const result = await withdrawalService.getWithdrawals({
       userId: targetUserId,
       status,
+      method,
+      search,
+      startDate,
+      endDate,
       page,
-      limit
+      limit,
+      isAdmin
     });
 
     return sendSuccess(
@@ -92,17 +98,16 @@ const getWithdrawals = async (req, res, next) => {
 const getWithdrawalById = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const isAdmin = req.user.role === USER_ROLES.ADMIN;
 
-    const withdrawal = await withdrawalService.getWithdrawalById(id);
+    const withdrawal = await withdrawalService.getWithdrawalById(id, null, isAdmin);
     if (!withdrawal) {
       return sendError(res, 404, 'Withdrawal not found.', 'NOT_FOUND');
     }
 
     // Role check: Regular user can only view their own
-    if (
-      req.user.role !== USER_ROLES.ADMIN &&
-      withdrawal.userId.toString() !== req.user.id.toString()
-    ) {
+    const ownerId = (withdrawal.userId?._id || withdrawal.userId).toString();
+    if (!isAdmin && ownerId !== req.user.id.toString()) {
       return sendError(
         res,
         403,

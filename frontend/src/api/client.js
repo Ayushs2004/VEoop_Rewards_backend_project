@@ -105,5 +105,11 @@ export const withdrawalApi = {
 
 export const adminApi = {
   getStats: () => apiClient('/api/admin/stats'),
+  getUsers: (params = '') => apiClient(`/api/admin/users${params ? `?${params}` : ''}`),
+  getUserDetails: (id) => apiClient(`/api/admin/users/${id}`),
+  getUserTransactions: (id, params = '') => apiClient(`/api/admin/users/${id}/transactions${params ? `?${params}` : ''}`),
+  getUserWithdrawals: (id, params = '') => apiClient(`/api/admin/users/${id}/withdrawals${params ? `?${params}` : ''}`),
+  getWithdrawals: (params = '') => apiClient(`/api/admin/withdrawals${params ? `?${params}` : ''}`),
+  getWithdrawalDetails: (id) => apiClient(`/api/admin/withdrawals/${id}`),
   getAuditLogs: (params = '') => apiClient(`/api/admin/audit-logs${params ? `?${params}` : ''}`)
 };

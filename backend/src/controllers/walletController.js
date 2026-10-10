@@ -97,15 +97,18 @@ const creditWallet = async (req, res, next) => {
       );
     }
 
+    const reason = (req.body.reason || req.body.description || '').trim();
+
     const result = await walletService.creditWallet({
       userId: targetUserId,
       currency,
       amount: parseFloat(amount),
       source: source || TRANSACTION_SOURCES.ADMIN_CREDIT,
-      description: description || `Admin balance adjustment credit by ${req.user.email}`,
+      description: reason || `Admin balance adjustment credit by ${req.user.email}`,
       metadata: {
         adminId: req.user.id,
         originalInput: userId,
+        reason,
         ...metadata
       }
     });
@@ -120,14 +123,25 @@ const creditWallet = async (req, res, next) => {
       metadata: {
         amount,
         currency: result.transaction.currency,
+        balanceBefore: result.transaction.balanceBefore,
+        balanceAfter: result.transaction.balanceAfter,
         newBalance: result.wallet.ves,
-        userInput: userId
+        userInput: userId,
+        reason
       },
       ip,
       userAgent
     });
 
-    return sendSuccess(res, 200, 'Wallet credited successfully.', result);
+    return sendSuccess(res, 200, 'Wallet credited successfully.', {
+      balanceBefore: result.transaction.balanceBefore,
+      balanceAfter: result.transaction.balanceAfter,
+      amount: result.transaction.amount,
+      currency: result.transaction.currency,
+      type: result.transaction.type,
+      wallet: result.wallet,
+      transaction: result.transaction
+    });
   } catch (error) {
     next(error);
   }
@@ -138,7 +152,7 @@ const creditWallet = async (req, res, next) => {
  */
 const debitWallet = async (req, res, next) => {
   try {
-    const { userId, currency, amount, source, description, metadata } = req.body;
+    const { userId, currency, amount, source, description, reason: reqReason, metadata } = req.body;
     const ip = req.ip || req.connection.remoteAddress;
     const userAgent = req.headers['user-agent'];
 
@@ -152,15 +166,18 @@ const debitWallet = async (req, res, next) => {
       );
     }
 
+    const reason = (reqReason || description || '').trim();
+
     const result = await walletService.debitWallet({
       userId: targetUserId,
       currency,
       amount: parseFloat(amount),
       source: source || TRANSACTION_SOURCES.ADMIN_DEBIT,
-      description: description || `Admin balance adjustment debit by ${req.user.email}`,
+      description: reason || `Admin balance adjustment debit by ${req.user.email}`,
       metadata: {
         adminId: req.user.id,
         originalInput: userId,
+        reason,
         ...metadata
       }
     });
@@ -175,14 +192,25 @@ const debitWallet = async (req, res, next) => {
       metadata: {
         amount,
         currency: result.transaction.currency,
+        balanceBefore: result.transaction.balanceBefore,
+        balanceAfter: result.transaction.balanceAfter,
         newBalance: result.wallet.ves,
-        userInput: userId
+        userInput: userId,
+        reason
       },
       ip,
       userAgent
     });
 
-    return sendSuccess(res, 200, 'Wallet debited successfully.', result);
+    return sendSuccess(res, 200, 'Wallet debited successfully.', {
+      balanceBefore: result.transaction.balanceBefore,
+      balanceAfter: result.transaction.balanceAfter,
+      amount: result.transaction.amount,
+      currency: result.transaction.currency,
+      type: result.transaction.type,
+      wallet: result.wallet,
+      transaction: result.transaction
+    });
   } catch (error) {
     next(error);
   }
